@@ -1,6 +1,6 @@
 <#
     .SYNOPSIS
-    Build-HackUsers.ps1
+    Add-HackUsers.ps1
 
     .DESCRIPTION
     Create Azure Active Directory users/groups from a CSV file.
@@ -30,14 +30,18 @@ $AADDomain = (Get-MgDomain | Where-Object {$_.isDefault}).Id
 $AADUsers = Import-Csv -Path $CSVFile
 $AADGroups = $AADUsers | Group-Object -Property Team
 
+# Construct the group name and display names
+$samAccountName = "hack-team$($Group.Name)"
+$displayName = "Team $($Group.Name)"
+
+# Create the group
 foreach ($Group in $AADGroups) {
-    # Create the group
     $GroupParams = @{
-        DisplayName = "Team $($Group.Name)"
+        DisplayName = $displayName
         MailEnabled = $false
-        MailNickName = "hack-team$($Group.Name)"
+        MailNickName = $samAccountName
         SecurityEnabled = $true
-        Description = "Hack Team $($Group.Name)"
+        Description = $displayName
     }
 
     try {
@@ -80,6 +84,12 @@ foreach ($Group in $AADGroups) {
         }
     }
 
+    # If no users were created, skip adding them to the group
+    if ($CreatedUsers.Count -eq 0) {
+        Write-Host ("No users created for the {0} group." -f $NewGroup.DisplayName) -ForegroundColor Yellow
+        continue
+    }
+
     # Add the users to the group params so we add them all at once
     $MemberParams = @{
         "members@odata.bind" = @( $CreatedUsers | ForEach-Object { "https://graph.microsoft.com/v1.0/directoryObjects/$($_)" } )
@@ -88,11 +98,12 @@ foreach ($Group in $AADGroups) {
     try {
         # Update the group with the members
         Update-MgGroup -GroupId $NewGroup.Id -BodyParameter $MemberParams
-        Write-Host ("Successfully add the user accounts to the {0} group." -f $NewGroup.DisplayName) -ForegroundColor White
+        Write-Host ("Successfully added the user accounts to the {0} group." -f $NewGroup.DisplayName) -ForegroundColor White
     }
     catch {
-        Write-Host ("Failed to add the user account to the {0} group. Error: {1}" -f $NewGroup.DisplayName, $_.Exception.Message) -ForegroundColor Red
+        Write-Host ("Failed to add the user accounts to the {0} group. Error: {1}" -f $NewGroup.DisplayName, $_.Exception.Message) -ForegroundColor Red
     }
     
-    ./infra/build.ps1 -TeamNumber $Group.Name -TeamAADGroup $NewGroup.Id
+    # Deploy the resources for the team
+    & "$PSScriptRoot\deploy\Deploy.ps1" -TeamNumber $Group.Name -TeamAADGroup $NewGroup.Id
 }

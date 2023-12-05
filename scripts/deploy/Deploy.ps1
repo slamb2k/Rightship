@@ -1,6 +1,6 @@
 <#
     .SYNOPSIS
-    Build-HackUsers.ps1
+    New-HackUsers.ps1
 
     .DESCRIPTION
     Create Azure Active Directory users/groups from a CSV file.
@@ -23,10 +23,14 @@ param(
     [string] $TeamAADGroup
 )
 
-Push-Location $PSScriptRoot
+# Stop on any error
+$ErrorActionPreference = "Stop"
+
+# Set the current directory to the script directory
+$templateFile = "$($PSScriptRoot)/main.bicep"
 
 Write-Host "Running Bicep Main deployment file for Team $TeamNumber resources..."
-$result=$(az deployment sub create --location "southeastasia" --template-file "main.bicep" --parameters teamNumber=$TeamNumber --only-show-errors) | ConvertFrom-Json
+$result=$(az deployment sub create --location "southeastasia" --template-file $templateFile --parameters teamNumber=$TeamNumber --only-show-errors) | ConvertFrom-Json
 $resourceGroupName=$result.properties.outputs.resourceGroupName.value
 
 if (!$bicepOutput) {
@@ -39,4 +43,3 @@ Write-Host "Assigning resource group reader permissions to team"
 az role assignment create --role "Reader" --assignee $TeamAADGroup --scope "/subscriptions/$(az account show --query id --output tsv)/resourceGroups/${resourceGroupName}${TeamNumber}"
 
 Write-Host "Bicep deployment. Done"
-Pop-Location

@@ -7,7 +7,7 @@
 
 1. Clone/download the repo.
 2. Edit the CSV containing the user details to configure the required user and groups.
-3. Execute the Build-HackUsers.ps1 script to create the users and groups.
+3. Execute the New-HackUsers.ps1 script to create the users and groups.
 
 ![Alt text](images/users.png)
 
@@ -17,4 +17,4 @@
 
 ## Databricks Workspace Provisioning
 
-See the template [README](template/README.md) for more details on the Bicep Template available for provisioning the Databricks workspace.
+See the template [README](scripts/deploy/README.md) for more details on the Bicep Template available for provisioning the Databricks workspace.
