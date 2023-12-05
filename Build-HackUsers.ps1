@@ -33,26 +33,26 @@ $AADGroups = $AADUsers | Group-Object -Property Team
 foreach ($Group in $AADGroups) {
     # Create the group
     $GroupParams = @{
-        DisplayName = "Team ${Group}"
+        DisplayName = "Team $($Group.Name)"
         MailEnabled = $false
-        MailNickName = "hack-team1"
+        MailNickName = "hack-team$($Group.Name)"
         SecurityEnabled = $true
-        Description = "Hack Team ${Group}"
+        Description = "Hack Team $($Group.Name)"
     }
 
     try {
         # Create the group
         $NewGroup = New-MgGroup @GroupParams -ErrorAction Stop
-        Write-Host ("Successfully created the {0} group." -f $Group.Name) -ForegroundColor Yellow
+        Write-Host ("Successfully created the Team {0} group." -f $Group.Name) -ForegroundColor Yellow
     }
     catch {
-        Write-Host ("Failed to create the {0} group. Error: {1}" -f $Group.Name, $_.Exception.Message) -ForegroundColor Red
+        Write-Host ("Failed to create the Team {0} group. Error: {1}" -f $Group.Name, $_.Exception.Message) -ForegroundColor Red
     }
 
     $CreatedUsers = @()
 
     # Loop through each row containing user details in the CSV file
-    foreach ($User in $Group.Team) {
+    foreach ($User in $Group.Group) {
         # Create password profile
         $PasswordProfile = @{
             Password                             = $User.Password
@@ -94,5 +94,5 @@ foreach ($Group in $AADGroups) {
         Write-Host ("Failed to add the user account to the {0} group. Error: {1}" -f $NewGroup.DisplayName, $_.Exception.Message) -ForegroundColor Red
     }
     
-    ./infra/build.ps1 -TeamNumber $Group.Team -TeamAADGroup $NewGroup.Id
+    ./infra/build.ps1 -TeamNumber $Group.Name -TeamAADGroup $NewGroup.Id
 }
