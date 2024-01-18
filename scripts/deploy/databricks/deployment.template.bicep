@@ -3,10 +3,9 @@ param force_update string = utcNow()
 param identity string
 param akv_id string
 param akv_uri string
-param adb_pat_lifetime string = '3600'
+param adb_pat_lifetime string
 param adb_workspace_url string
 param adb_workspace_id string
-param adb_secret_scope_name string
 param adb_cluster_name string = 'test-cluster-01'
 param adb_spark_version string = '7.3.x-scala2.12'
 param adb_node_type string = 'Standard_D3_v2'
@@ -16,8 +15,13 @@ param LogAWkspId string
 param LogAWkspKey string
 param storageKey string
 param evenHubKey string
+param eventHubId string
+param deployADBCluster bool
 
-resource createAdbPATToken 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
+@secure()
+param adb_secret_scope_name string
+
+resource createAdbPATToken 'Microsoft.Resources/deploymentScripts@2020-10-01' =  if(deployADBCluster) {
   name: 'createAdbPATToken'
   location: location
   kind: 'AzureCLI'
@@ -50,7 +54,7 @@ resource createAdbPATToken 'Microsoft.Resources/deploymentScripts@2020-10-01' = 
   }
 }
 
-resource secretScopeLink 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
+resource secretScopeLink 'Microsoft.Resources/deploymentScripts@2020-10-01' = if(deployADBCluster) {
   name: 'secretScopeLink'
   location: location
   kind: 'AzureCLI'
@@ -114,7 +118,7 @@ resource secretScopeLink 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
   ]
 }
 
-resource uploadFilesToAdb 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
+resource uploadFilesToAdb 'Microsoft.Resources/deploymentScripts@2020-10-01' = if(deployADBCluster) {
   name: 'uploadFilesToAdb'
   location: location
   kind: 'AzureCLI'
@@ -138,12 +142,16 @@ resource uploadFilesToAdb 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
         name: 'ADB_WORKSPACE_ID'
         value: adb_workspace_id
       }
+      {
+        name: 'EVENT_HUB_ID'
+        value: eventHubId
+      }
     ]
     scriptContent: loadTextContent('deployment/pre_cluster_create.sh')
   }
 }
 
-resource createAdbCluster 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
+resource createAdbCluster 'Microsoft.Resources/deploymentScripts@2020-10-01' = if(deployADBCluster) {
   name: 'createAdbCluster'
   location: location
   kind: 'AzureCLI'
@@ -201,7 +209,7 @@ resource createAdbCluster 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
   ]
 }
 
-resource configAdbCluster 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
+resource configAdbCluster 'Microsoft.Resources/deploymentScripts@2020-10-01' = if(deployADBCluster) {
   name: 'configAdbCluster'
   location: location
   kind: 'AzureCLI'
@@ -233,11 +241,10 @@ resource configAdbCluster 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
     ]
     scriptContent: loadTextContent('deployment/post_cluster_create.sh')
   }
-  dependsOn:[
+  dependsOn: [
     createAdbCluster
   ]
 }
 
-output patOutput object = createAdbPATToken.properties
-// output akvLinkOutput object = secretScopeLink.properties
-output adbCluster object = createAdbCluster.properties
+output patToken string = createAdbPATToken.properties.outputs.token_value
+// output adbCluster object = createAdbCluster.properties
