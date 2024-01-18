@@ -3,7 +3,7 @@ param force_update string = utcNow()
 param identity string
 param akv_id string
 param akv_uri string
-param adb_pat_lifetime string
+param adb_pat_lifetime string = '3600'
 param adb_workspace_url string
 param adb_workspace_id string
 param adb_cluster_name string = 'test-cluster-01'
@@ -15,8 +15,7 @@ param LogAWkspId string
 param LogAWkspKey string
 param storageKey string
 param evenHubKey string
-param eventHubId string
-param deployADBCluster bool
+param deployADBCluster bool = true
 
 @secure()
 param adb_secret_scope_name string
@@ -141,10 +140,6 @@ resource uploadFilesToAdb 'Microsoft.Resources/deploymentScripts@2020-10-01' = i
       {
         name: 'ADB_WORKSPACE_ID'
         value: adb_workspace_id
-      }
-      {
-        name: 'EVENT_HUB_ID'
-        value: eventHubId
       }
     ]
     scriptContent: loadTextContent('deployment/pre_cluster_create.sh')

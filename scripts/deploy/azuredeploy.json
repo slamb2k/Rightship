@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.24.24.22086",
-      "templateHash": "876806441008294539"
+      "templateHash": "5711399319822258804"
     }
   },
   "parameters": {
@@ -1808,7 +1808,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.24.24.22086",
-              "templateHash": "6874994148856856605"
+              "templateHash": "8289414824909683439"
             }
           },
           "parameters": {
@@ -1836,9 +1836,6 @@
               "type": "string"
             },
             "adb_workspace_id": {
-              "type": "string"
-            },
-            "adb_secret_scope_name": {
               "type": "string"
             },
             "adb_cluster_name": {
@@ -1872,6 +1869,13 @@
             },
             "evenHubKey": {
               "type": "string"
+            },
+            "deployADBCluster": {
+              "type": "bool",
+              "defaultValue": true
+            },
+            "adb_secret_scope_name": {
+              "type": "securestring"
             }
           },
           "variables": {
@@ -1883,6 +1887,7 @@
           },
           "resources": [
             {
+              "condition": "[parameters('deployADBCluster')]",
               "type": "Microsoft.Resources/deploymentScripts",
               "apiVersion": "2020-10-01",
               "name": "createAdbPATToken",
@@ -1917,6 +1922,7 @@
               }
             },
             {
+              "condition": "[parameters('deployADBCluster')]",
               "type": "Microsoft.Resources/deploymentScripts",
               "apiVersion": "2020-10-01",
               "name": "secretScopeLink",
@@ -1982,6 +1988,7 @@
               ]
             },
             {
+              "condition": "[parameters('deployADBCluster')]",
               "type": "Microsoft.Resources/deploymentScripts",
               "apiVersion": "2020-10-01",
               "name": "uploadFilesToAdb",
@@ -2012,6 +2019,7 @@
               }
             },
             {
+              "condition": "[parameters('deployADBCluster')]",
               "type": "Microsoft.Resources/deploymentScripts",
               "apiVersion": "2020-10-01",
               "name": "createAdbCluster",
@@ -2071,6 +2079,7 @@
               ]
             },
             {
+              "condition": "[parameters('deployADBCluster')]",
               "type": "Microsoft.Resources/deploymentScripts",
               "apiVersion": "2020-10-01",
               "name": "configAdbCluster",
@@ -2110,13 +2119,9 @@
             }
           ],
           "outputs": {
-            "patOutput": {
-              "type": "object",
-              "value": "[reference(resourceId('Microsoft.Resources/deploymentScripts', 'createAdbPATToken'), '2020-10-01')]"
-            },
-            "adbCluster": {
-              "type": "object",
-              "value": "[reference(resourceId('Microsoft.Resources/deploymentScripts', 'createAdbCluster'), '2020-10-01')]"
+            "patToken": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Resources/deploymentScripts', 'createAdbPATToken'), '2020-10-01').outputs.token_value]"
             }
           }
         }
